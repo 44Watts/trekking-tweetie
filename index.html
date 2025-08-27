@@ -5,76 +5,99 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>[client]'s Trekking Tweety</title>
 <style>
-  html,body{margin:0;height:100%;background:#9ad1f7;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif}
-  .wrap{display:grid;place-items:center;min-height:100vh;padding:12px}
-  #gameCanvas{background:linear-gradient(#aee1ff,#cbefff 60%,#a2e3a2);border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.2);image-rendering:pixelated;image-rendering:crisp-edges;touch-action:manipulation}
-
-  /* Make header always stay on top */
-  header{
-    position: sticky;
-    top: 0;
-    z-index: 100;
+  html,body{
+    margin:0;
     background:#9ad1f7;
-    padding:12px 0;
+    font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif
   }
+
+  /* Layout: Title -> Score -> Game */
   .page-title{
     text-align:center;
     font-size:2.2em;
     font-weight:800;
-    margin:0;
+    margin:16px 0 6px;
     color:#06322b;
     text-shadow:0 2px 0 #fff8;
   }
 
-  /* HUD below header */
   .hud{
-    position:fixed;
-    left:0;
-    right:0;
-    top:60px; /* offset so it doesn’t overlap header */
-    pointer-events:none;
-    display:grid;
-    place-items:start center;
-    color:#06322b;
+    text-align:center;
     font-weight:800;
     font-size:20px;
+    color:#06322b;
     text-shadow:0 2px 0 #fff8;
-    z-index:50;
+    margin-bottom:10px;
   }
 
-  .overlay{position:fixed;inset:0;display:none;place-items:center;z-index:10;background:transparent}
-  .panel{pointer-events:auto;background:#ffffffc0;padding:18px 22px;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.18);text-align:center}
-  .btn{appearance:none;border:0;border-radius:10px;padding:10px 14px;background:#ffd65c;color:#2b1b00;font-weight:700;cursor:pointer;box-shadow:0 4px 0 #bda044}
+  .wrap{
+    position:relative;              /* so overlay can sit over canvas only */
+    display:grid;
+    place-items:center;
+    min-height:60vh;
+    padding:12px;
+  }
+
+  #gameCanvas{
+    background:linear-gradient(#aee1ff,#cbefff 60%,#a2e3a2);
+    border-radius:14px;
+    box-shadow:0 10px 40px rgba(0,0,0,.2);
+    image-rendering:pixelated;
+    image-rendering:crisp-edges;
+    touch-action:manipulation
+  }
+
+  /* Overlay covers only the game area */
+  .overlay{
+    position:absolute;              /* <- no longer fixed to the page */
+    inset:0;
+    display:none;
+    place-items:center;
+    z-index:10;
+    background:transparent;
+  }
+
+  .panel{
+    pointer-events:auto;
+    background:#ffffffc0;
+    padding:18px 22px;
+    border-radius:14px;
+    box-shadow:0 8px 30px rgba(0,0,0,.18);
+    text-align:center
+  }
+
+  .btn{
+    appearance:none;border:0;border-radius:10px;
+    padding:10px 14px;background:#ffd65c;color:#2b1b00;
+    font-weight:700;cursor:pointer;box-shadow:0 4px 0 #bda044
+  }
 </style>
 </head>
 <body>
-  <!-- Page-top title -->
-  <header>
-    <h1 class="page-title">[client]'s Trekking Tweety</h1>
-  </header>
 
+  <!-- Title -->
+  <h1 class="page-title">[client]'s Trekking Tweety</h1>
+
+  <!-- Score (not fixed; scrolls with page) -->
+  <div class="hud">
+    <span id="scoreLabel">Score: 0</span> &nbsp;|&nbsp; <span id="bestLabel">Best: 0</span>
+  </div>
+
+  <!-- Game area -->
   <div class="wrap">
     <canvas id="gameCanvas" width="432" height="768"></canvas>
-  </div>
 
-  <div class="hud">
-    <div><span id="scoreLabel">Score: 0</span> &nbsp;|&nbsp; <span id="bestLabel">Best: 0</span></div>
-  </div>
-
-  <div class="overlay" id="overlay">
-    <div class="panel">
-      <h2 id="title">Tap / Space to flap</h2>
-      <div id="subtitle">Avoid the trees!</div><br>
-      <button class="btn" id="startBtn" type="button">Start</button>
+    <!-- Overlay sits over canvas only -->
+    <div class="overlay" id="overlay">
+      <div class="panel">
+        <h2 id="title">Tap / Space to flap</h2>
+        <div id="subtitle">Avoid the trees!</div><br>
+        <button class="btn" id="startBtn" type="button">Start</button>
+      </div>
     </div>
   </div>
 
 <script>
-/* === same game JS from before (unchanged) === */
-</script>
-</body>
-</html>
-
 (() => {
   // ---------- CONFIG ----------
   const BOTTOM_VARIANTS = 6;
@@ -106,7 +129,9 @@
 
   // ---------- RESIZE ----------
   function fitCanvas(){
-    const maxH = Math.min(window.innerHeight*0.9, 900);
+    // Keep canvas reasonably tall while leaving room for title/score above
+    const usableH = Math.max(320, window.innerHeight - 160); // leave some space
+    const maxH = Math.min(usableH, 900);
     const h = Math.round(maxH), w = Math.round(h*9/16);
     canvas.width = w; canvas.height = h;
   }
@@ -171,7 +196,9 @@
       this.x = x;
       this.passed = false;
 
+      // Anchor bottom to ground
       this.botY = canvas.height - this.botH;
+      // Place top one gap above
       this.topY = this.botY - this.gap - this.topH;
     }
     update(dt) { this.x -= SCROLL_SPEED() * dt; }
@@ -293,5 +320,3 @@
 </script>
 </body>
 </html>
-
-
