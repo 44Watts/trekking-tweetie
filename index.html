@@ -5,36 +5,102 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Half-Moon Outfitters - Trekking Tweetie</title>
 <style>
-  html,body{margin:0;height:100%;background:#9ad1f7;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif}
-  .wrap{display:grid;place-items:center;min-height:100vh;padding:12px}
-  #gameCanvas{background:linear-gradient(#aee1ff,#cbefff 60%,#a2e3a2);border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.2);image-rendering:pixelated;image-rendering:crisp-edges;touch-action:manipulation}
-  .hud{position:fixed;inset:0;pointer-events:none;display:grid;place-items:start center;padding-top:10px;color:#06322b;font-weight:800;font-size:20px;text-shadow:0 2px 0 #fff8}
-  .overlay{position:fixed;inset:0;display:none;place-items:center;z-index:10;background:transparent}
-  .panel{pointer-events:auto;background:#ffffffc0;padding:18px 22px;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.18);text-align:center}
-  .btn{appearance:none;border:0;border-radius:10px;padding:10px 14px;background:#ffd65c;color:#2b1b00;font-weight:700;cursor:pointer;box-shadow:0 4px 0 #bda044}
+  html,body{
+    margin:0;
+    background:#9ad1f7;
+    font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif
+  }
+
+  /* Layout: Title -> Score -> Game */
+  .page-title{
+    text-align:center;
+    font-size:2.2em;
+    font-weight:800;
+    margin:16px 0 6px;
+    color:#06322b;
+    text-shadow:0 2px 0 #fff8;
+  }
+
+  .hud{
+    text-align:center;
+    font-weight:800;
+    font-size:20px;
+    color:#06322b;
+    text-shadow:0 2px 0 #fff8;
+    margin-bottom:10px;
+  }
+
+  .wrap{
+    position:relative;              /* so overlay can sit over canvas only */
+    display:grid;
+    place-items:center;
+    min-height:60vh;
+    padding:12px;
+  }
+
+  #gameCanvas{
+    background:linear-gradient(#aee1ff,#cbefff 60%,#a2e3a2);
+    border-radius:14px;
+    box-shadow:0 10px 40px rgba(0,0,0,.2);
+    image-rendering:pixelated;
+    image-rendering:crisp-edges;
+    touch-action:manipulation
+  }
+
+  /* Overlay covers only the game area */
+  .overlay{
+    position:absolute;              /* <- no longer fixed to the page */
+    inset:0;
+    display:none;
+    place-items:center;
+    z-index:10;
+    background:transparent;
+  }
+
+  .panel{
+    pointer-events:auto;
+    background:#ffffffc0;
+    padding:18px 22px;
+    border-radius:14px;
+    box-shadow:0 8px 30px rgba(0,0,0,.18);
+    text-align:center
+  }
+
+  .btn{
+    appearance:none;border:0;border-radius:10px;
+    padding:10px 14px;background:#ffd65c;color:#2b1b00;
+    font-weight:700;cursor:pointer;box-shadow:0 4px 0 #bda044
+  }
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <canvas id="gameCanvas" width="432" height="768"></canvas>
-  </div>
- <h1 class="page-title">Half-Moon Outfitters' Trekking Tweetie</h1>
+
+  <!-- Title -->
+  <h1 class="page-title">Half-Moon Outfitters' Trekking Tweetie</h1>
+
+  <!-- Score (not fixed; scrolls with page) -->
   <div class="hud">
-    <div><span id="scoreLabel">Score: 0</span> &nbsp;|&nbsp; <span id="bestLabel">Best: 0</span></div>
+    <span id="scoreLabel">Score: 0</span> &nbsp;|&nbsp; <span id="bestLabel">Best: 0</span>
   </div>
 
-  <div class="overlay" id="overlay">
-    <div class="panel">
-      <h2 id="title">Tap / Space to flap</h2>
-      <div id="subtitle">Avoid the trees!</div><br>
-      <button class="btn" id="startBtn" type="button">Start</button>
+  <!-- Game area -->
+  <div class="wrap">
+    <canvas id="gameCanvas" width="432" height="768"></canvas>
+
+    <!-- Overlay sits over canvas only -->
+    <div class="overlay" id="overlay">
+      <div class="panel">
+        <h2 id="title">Tap / Space to flap</h2>
+        <div id="subtitle">Avoid the trees!</div><br>
+        <button class="btn" id="startBtn" type="button">Start</button>
+      </div>
     </div>
   </div>
 
 <script>
 (() => {
   // ---------- CONFIG ----------
-  const BOTTOM_VARIANTS = 6;        // how many bottom_*.png you have
+  const BOTTOM_VARIANTS = 6;
   const OBSTACLE_SPAWN_SEC = 1.35;
   const SCROLL_SPEED_BASE = 200;
   const GAP_PIXELS_BASE = 180;
@@ -52,19 +118,20 @@
   const scoreEl = document.getElementById('scoreLabel');
   const bestEl  = document.getElementById('bestLabel');
   const overlay = document.getElementById('overlay');
-  const titleEl = document.getElementById('title');
   const subEl   = document.getElementById('subtitle');
   const startBtn= document.getElementById('startBtn');
 
   let birdImg, topImg, bottomImgs = [];
-  let bird; // instantiate after images load
+  let bird;
   let started = false, dead = false, running = false;
   let score = 0, best = Number(localStorage.getItem('treeflap_best')||0);
   bestEl.textContent = `Best: ${best}`;
 
   // ---------- RESIZE ----------
   function fitCanvas(){
-    const maxH = Math.min(window.innerHeight*0.9, 900);
+    // Keep canvas reasonably tall while leaving room for title/score above
+    const usableH = Math.max(320, window.innerHeight - 160); // leave some space
+    const maxH = Math.min(usableH, 900);
     const h = Math.round(maxH), w = Math.round(h*9/16);
     canvas.width = w; canvas.height = h;
   }
@@ -84,10 +151,8 @@
   }
 
   async function preload(){
-    console.log("Preloading images…");
     [birdImg, topImg] = await Promise.all([loadImage(BIRD_SRC), loadImage(TOP_SRC)]);
     bottomImgs = await Promise.all(BOTTOM_SRCS.map(loadImage));
-    console.log("Images loaded:", {bird:birdImg.src, top:topImg.src, bottoms:bottomImgs.map(i=>i.src)});
   }
 
   // ---------- CLASSES ----------
@@ -136,21 +201,16 @@
       // Place top one gap above
       this.topY = this.botY - this.gap - this.topH;
     }
-
     update(dt) { this.x -= SCROLL_SPEED() * dt; }
-
     draw(ctx) {
       ctx.drawImage(this.topImg, this.x, this.topY, this.topW, this.topH);
       ctx.drawImage(this.bottomImg, this.x, this.botY, this.botW, this.botH);
     }
-
     offscreen() { return this.x + this.topW < 0; }
-
     passedBy(bird) {
       if (!this.passed && this.x + this.topW < bird.x) { this.passed = true; return true; }
       return false;
     }
-
     collides(bird) {
       const b = bird.bbox();
       const topBox = { x: this.x + COLLISION_PAD, y: this.topY + COLLISION_PAD, w: this.topW - 2 * COLLISION_PAD, h: this.topH - 2 * COLLISION_PAD };
@@ -165,28 +225,25 @@
   let obstacles=[]; let spawnTimer=0; let lastTime=0;
 
   function resetGame(){
-    console.log("Reset game");
     score=0; scoreEl.textContent="Score: 0";
     dead=false; started=false; running=false;
     bird.reset(); obstacles=[]; spawnTimer=0;
-    showOverlay("Tap / Space to flap","Avoid the trees!",true);
+    showOverlay("Avoid the trees!",true);
     drawStaticFrame();
   }
 
   function startGame(){
     if (running) return;
-    console.log("Start game");
     started=true; dead=false; running=true; hideOverlay();
     lastTime=performance.now();
     requestAnimationFrame(loop);
   }
 
   function gameOver(){
-    console.log("Game over");
     dead=true; started=false; running=false;
     if(score>best){best=score;localStorage.setItem('treeflap_best',best);}
     bestEl.textContent=`Best: ${best}`;
-    showOverlay("Game Over",`Score: ${score}`,true);
+    showOverlay(`Score: ${score} — Avoid the trees!`,true);
   }
 
   function spawnObstacle(){ obstacles.push(new Obstacle(canvas.width+20)); }
@@ -228,8 +285,9 @@
     if (bird) bird.draw(ctx);
   }
 
-  function showOverlay(title,subtitle,showBtn){
-    titleEl.textContent=title; subEl.textContent=subtitle||"";
+  function showOverlay(subtitle,showBtn){
+    document.getElementById('title').textContent = "Tap / Space to flap";
+    subEl.textContent = subtitle || "Avoid the trees!";
     startBtn.style.display = showBtn? "inline-block":"none";
     overlay.style.display="grid";
   }
@@ -256,7 +314,7 @@
     resetGame();
   }).catch(err=>{
     console.error(err);
-    showOverlay("Couldn't load images","Check file names & paths",false);
+    showOverlay("Couldn't load images",false);
   });
 })();
 </script>
