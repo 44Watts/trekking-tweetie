@@ -3,11 +3,12 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Half-Moon Outfitters - Trekking Tweetie</title>
+<title>[client]'s Trekking Tweety</title>
 <style>
   html,body{margin:0;height:100%;background:#9ad1f7;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif}
   .wrap{display:grid;place-items:center;min-height:100vh;padding:12px}
   #gameCanvas{background:linear-gradient(#aee1ff,#cbefff 60%,#a2e3a2);border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.2);image-rendering:pixelated;image-rendering:crisp-edges;touch-action:manipulation}
+
   /* Make header always stay on top */
   header{
     position: sticky;
@@ -40,23 +41,16 @@
     text-shadow:0 2px 0 #fff8;
     z-index:50;
   }
+
   .overlay{position:fixed;inset:0;display:none;place-items:center;z-index:10;background:transparent}
   .panel{pointer-events:auto;background:#ffffffc0;padding:18px 22px;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.18);text-align:center}
   .btn{appearance:none;border:0;border-radius:10px;padding:10px 14px;background:#ffd65c;color:#2b1b00;font-weight:700;cursor:pointer;box-shadow:0 4px 0 #bda044}
-  .page-title{
-    text-align:center;
-    font-size:2.2em;
-    font-weight:800;
-    margin:16px 0 8px;
-    color:#06322b;
-    text-shadow:0 2px 0 #fff8;
-  }
 </style>
 </head>
 <body>
   <!-- Page-top title -->
   <header>
-    <h1 class="page-title">Half-Moon Outfitters' Trekking Tweetie</h1>
+    <h1 class="page-title">[client]'s Trekking Tweety</h1>
   </header>
 
   <div class="wrap">
@@ -76,6 +70,11 @@
   </div>
 
 <script>
+/* === same game JS from before (unchanged) === */
+</script>
+</body>
+</html>
+
 (() => {
   // ---------- CONFIG ----------
   const BOTTOM_VARIANTS = 6;
@@ -294,4 +293,5 @@
 </script>
 </body>
 </html>
+
 
